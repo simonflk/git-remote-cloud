@@ -31,5 +31,21 @@
   },
   "bugs": {
     "url": "https://github.com/simonflk/git-remote-cloud/issues"
+  },
+  "dependencies": {
+    "async-iterators-kit": "1.0.1",
+    "dot-prop": "4.2.0",
+    "env-paths": "2.0.0",
+    "json5": "2.1.0"
+  },
+  "optionalDependencies": {
+    "git-remote-cloud-driver-dropbox": "0.0.0",
+    "git-remote-cloud-driver-pcloud": "0.0.0",
+    "git-remote-cloud-driver-fs": "0.0.0"
+  },
+  "devDependencies": {
+    "@types/dot-prop": "4.2.0",
+    "@types/env-paths": "1.0.2",
+    "@types/json5": "0.0.30"
   }
 }

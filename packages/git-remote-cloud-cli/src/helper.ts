@@ -1,21 +1,19 @@
 import readline from 'readline';
+import { ReadlineAsyncIterator } from 'async-iterators-kit';
 
 import CommandContext, { HelperCommand, HelperOptions } from './command-context';
-
 import capabilitiesCmd from './command/capabilities.cmd';
 import optionCmd from './command/option.cmd';
 import listCmd from './command/list.cmd';
 import pushCmd from './command/push.cmd';
 import fetchCmd from './command/fetch.cmd';
 
-interface RunnerOptions {
-    url: string,
+export default async function run(options: {
+    driver: any,
     input: NodeJS.ReadStream,
     output: NodeJS.WriteStream,
     verbosity: 0 | 1 | 2
-}
-
-export default function run(options: RunnerOptions) {
+}) {
     const handlers : HelperCommand[] = [
         capabilitiesCmd,
         optionCmd,
@@ -24,18 +22,18 @@ export default function run(options: RunnerOptions) {
         fetchCmd,
     ];
 
-    const io = readline.createInterface({
+    const rl = readline.createInterface({
         input: options.input,
-        output: options.output,
         crlfDelay: Infinity,
         prompt: '',
     });
+    const iterator = new ReadlineAsyncIterator(rl);
 
     let helperOptions : HelperOptions = {
         verbosity: options.verbosity
     }
 
-    io.on('line', (line: string) => {
+    for await (const line of iterator) {
         const handler = handlers.find(h => h.test(line));
         if (handler) {
             const output = handler.run(new CommandContext(line, helperOptions));
@@ -43,20 +41,9 @@ export default function run(options: RunnerOptions) {
                 options.output.write(`${out}\n`);
             });
         } else if (line === '') {
-            io.close();
+            break;
         } else {
             throw new Error(`Fatal: Unsupported operation: ${line}`);
         }
-    });
-
-    io.on('close', () => {
-        // cleanup
-    })
+    }
 }
-
-run({
-    url: 'foo',
-    input: process.stdin,
-    output: process.stdout,
-    verbosity: 1
-})

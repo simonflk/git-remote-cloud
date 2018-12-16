@@ -1,7 +1,7 @@
 {
-  "name": "git-remote-cloud-backend-fs",
+  "name": "git-remote-cloud-driver-fs",
   "version": "0.0.0",
-  "description": "Local Filesystem backend for git-remote-cloud",
+  "description": "Local Filesystem driver for git-remote-cloud",
   "author": "Simon Flack <simonflack@gmail.com>",
   "homepage": "https://github.com/simonflk/git-remote-cloud#readme",
   "license": "ISC",

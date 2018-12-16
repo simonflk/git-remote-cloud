@@ -1,12 +1,12 @@
 {
-  "name": "git-remote-cloud-backend-pcloud",
+  "name": "git-remote-cloud-driver-dropbox",
   "version": "0.0.0",
-  "description": "pCloud backend for git-remote-cloud",
+  "description": "Dropbox driver for git-remote-cloud",
   "author": "Simon Flack <simonflack@gmail.com>",
   "homepage": "https://github.com/simonflk/git-remote-cloud#readme",
   "license": "ISC",
-  "main": "lib/pcloud.js",
-  "typings": "lib/pcloud.d.ts",
+  "main": "lib/dropbox.js",
+  "typings": "lib/dropbox.d.ts",
   "directories": {
     "lib": "lib",
     "test": "__tests__"
