@@ -1,6 +1,3 @@
-import readline from 'readline';
-import { ReadlineAsyncIterator } from 'async-iterators-kit';
-
 import CommandContext, { HelperCommand, HelperOptions } from './command-context';
 import capabilitiesCmd from './command/capabilities.cmd';
 import optionCmd from './command/option.cmd';
@@ -22,28 +19,34 @@ export default async function run(options: {
         fetchCmd,
     ];
 
-    const rl = readline.createInterface({
-        input: options.input,
-        crlfDelay: Infinity,
-        prompt: '',
-    });
-    const iterator = new ReadlineAsyncIterator(rl);
-
     let helperOptions : HelperOptions = {
-        verbosity: options.verbosity
-    }
+        verbosity: options.verbosity,
+        input: options.input,
+    };
 
-    for await (const line of iterator) {
-        const handler = handlers.find(h => h.test(line));
+
+    const context = new CommandContext(helperOptions)
+    while (context.isConnected()) {
+        let lines = [ await context.readLine() ];
+
+        const handler = handlers.find(h => h.test(lines[0]));
         if (handler) {
-            const output = handler.run(new CommandContext(line, helperOptions));
+            if (handler.batch) {
+                lines = lines.concat(await context.readBatch());
+            }
+
+            const output = handler.run(context, lines);
             output.forEach(out => {
                 options.output.write(`${out}\n`);
             });
-        } else if (line === '') {
+            options.output.write('\n');
+        } else if (lines[0] === '') {
             break;
         } else {
-            throw new Error(`Fatal: Unsupported operation: ${line}`);
+            throw new Error(`Fatal: Unsupported operation: ${lines[0]}`);
         }
+
     }
+
+    context.stop();
 }
