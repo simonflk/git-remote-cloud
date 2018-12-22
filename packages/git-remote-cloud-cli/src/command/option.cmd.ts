@@ -1,4 +1,4 @@
-import { HelperCommand } from '../command-context';
+import { HelperCommand } from '../types';
 
 // Options Command
 export default {
@@ -6,8 +6,8 @@ export default {
     run: (ctx, line) => {
         const matchOption = /option (\S+) (\S+)/;
         const [match = '', name = '', value = ''] = line.match(matchOption) || [];
-        if (name === 'verbosity') {
-            ctx.options[name] = Number(value);
+        if (ctx.hasOption(name)) {
+            ctx.setOption(name, Number(value));
             return ctx.write('ok');
         }
         ctx.write('unsupported');

@@ -1,4 +1,4 @@
-import { HelperCommand } from '../command-context';
+import { HelperCommand } from '../types';
 
 // Capabilities Command
 export default {

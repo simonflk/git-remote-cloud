@@ -1,40 +1,46 @@
 import readline from 'readline';
 import { ReadlineAsyncIterator } from 'async-iterators-kit';
-export interface HelperOptions {
-    verbosity: number,
-    input: NodeJS.ReadStream,
-    output: NodeJS.WriteStream,
-}
 
-export interface HelperCommand {
-    test(line: string): boolean,
-    run(ctx: CommandContext, line: string): void,
-}
+import * as types from './types';
 
-export default class CommandContext {
+export default class CommandContext implements types.CommandContext {
     constructor(
-        public options: HelperOptions,
+        options: types.HelperOptions,
     ) {
         this.rl = readline.createInterface({
             input: options.input,
             crlfDelay: Infinity,
             prompt: '',
         });
+        this.driver = options.driver;
         this.output = options.output;
         this.iterator = new ReadlineAsyncIterator(this.rl);
-        this.options = options;
+        this.options = {
+            verbosity: options.verbosity
+        };
         this.done = false;
     }
 
+    private options: { verbosity: 0 | 1 | 2 };
     private output: NodeJS.WriteStream;
     private done: boolean;
     private iterator: ReadlineAsyncIterator;
     private rl: readline.Interface;
 
+    public driver: types.CloudDriver;
+
     logger = (level: number, message: string = '') => {
         if (level <= this.options.verbosity) {
             console.error(message);
         }
+    }
+
+    hasOption(opt: string) : boolean {
+        return opt in this.options;
+    }
+
+    setOption(opt: string, val: any) {
+        (this.options as any)[opt] = val;
     }
 
     async readLine() : Promise<string> {

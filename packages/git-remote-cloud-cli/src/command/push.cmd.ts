@@ -1,4 +1,4 @@
-import { HelperCommand } from '../command-context';
+import { HelperCommand } from '../types';
 
 // push Command
 export default {

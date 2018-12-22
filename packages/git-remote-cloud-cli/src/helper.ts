@@ -1,16 +1,13 @@
-import CommandContext, { HelperCommand, HelperOptions } from './command-context';
+import CommandContext from './command-context';
 import capabilitiesCmd from './command/capabilities.cmd';
 import optionCmd from './command/option.cmd';
 import listCmd from './command/list.cmd';
 import pushCmd from './command/push.cmd';
 import fetchCmd from './command/fetch.cmd';
 
-export default async function run(options: {
-    driver: any,
-    input: NodeJS.ReadStream,
-    output: NodeJS.WriteStream,
-    verbosity: 0 | 1 | 2
-}) {
+import { HelperCommand, HelperOptions } from './types';
+
+export default async function run(options: HelperOptions) {
     const handlers : HelperCommand[] = [
         capabilitiesCmd,
         optionCmd,
@@ -19,13 +16,7 @@ export default async function run(options: {
         fetchCmd,
     ];
 
-    let helperOptions : HelperOptions = {
-        verbosity: options.verbosity,
-        input: options.input,
-        output: options.output,
-    };
-
-    const context = new CommandContext(helperOptions);
+    const context = new CommandContext(options);
 
     try {
         while (context.isConnected()) {

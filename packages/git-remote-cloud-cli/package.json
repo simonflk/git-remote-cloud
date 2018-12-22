@@ -33,10 +33,12 @@
     "url": "https://github.com/simonflk/git-remote-cloud/issues"
   },
   "dependencies": {
+    "@types/nodegit": "0.22.7",
     "async-iterators-kit": "1.0.1",
     "dot-prop": "4.2.0",
     "env-paths": "2.0.0",
-    "json5": "2.1.0"
+    "json5": "2.1.0",
+    "nodegit": "0.23.0"
   },
   "optionalDependencies": {
     "git-remote-cloud-driver-dropbox": "0.0.0",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "@types/dot-prop": "4.2.0",
     "@types/env-paths": "1.0.2",
-    "@types/json5": "0.0.30"
+    "@types/json5": "0.0.30",
+    "git-remote-cloud-driver-base": "0.0.0"
   }
 }
