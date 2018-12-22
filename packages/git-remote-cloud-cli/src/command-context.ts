@@ -3,12 +3,12 @@ import { ReadlineAsyncIterator } from 'async-iterators-kit';
 export interface HelperOptions {
     verbosity: number,
     input: NodeJS.ReadStream,
+    output: NodeJS.WriteStream,
 }
 
 export interface HelperCommand {
     test(line: string): boolean,
-    run(ctx: CommandContext, lines: string[]): string[],
-    batch?: boolean,
+    run(ctx: CommandContext, line: string): void,
 }
 
 export default class CommandContext {
@@ -20,11 +20,13 @@ export default class CommandContext {
             crlfDelay: Infinity,
             prompt: '',
         });
+        this.output = options.output;
         this.iterator = new ReadlineAsyncIterator(this.rl);
         this.options = options;
         this.done = false;
     }
 
+    private output: NodeJS.WriteStream;
     private done: boolean;
     private iterator: ReadlineAsyncIterator;
     private rl: readline.Interface;
@@ -43,7 +45,6 @@ export default class CommandContext {
 
     async readBatch() : Promise<string[]> {
         let lines = [];
-        let done = false;
         while(true) {
             const line = await this.readLine();
             if (line === '') {
@@ -53,6 +54,12 @@ export default class CommandContext {
             }
         }
         return lines;
+    }
+
+    write(...lines: string[]) : void {
+        lines.forEach(out => {
+            this.output.write(`${out}\n`);
+        });
     }
 
     isConnected(): boolean {

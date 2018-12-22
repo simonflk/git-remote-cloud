@@ -22,31 +22,26 @@ export default async function run(options: {
     let helperOptions : HelperOptions = {
         verbosity: options.verbosity,
         input: options.input,
+        output: options.output,
     };
 
+    const context = new CommandContext(helperOptions);
 
-    const context = new CommandContext(helperOptions)
-    while (context.isConnected()) {
-        let lines = [ await context.readLine() ];
-
-        const handler = handlers.find(h => h.test(lines[0]));
-        if (handler) {
-            if (handler.batch) {
-                lines = lines.concat(await context.readBatch());
+    try {
+        while (context.isConnected()) {
+            const line = await context.readLine();
+            const handler = handlers.find(h => h.test(line));
+            if (handler) {
+                await handler.run(context, line);
+                context.write('');
+            } else if (line === '') {
+                break;
+            } else {
+                throw new Error(`Fatal: Unsupported operation: ${line}`);
             }
-
-            const output = handler.run(context, lines);
-            output.forEach(out => {
-                options.output.write(`${out}\n`);
-            });
-            options.output.write('\n');
-        } else if (lines[0] === '') {
-            break;
-        } else {
-            throw new Error(`Fatal: Unsupported operation: ${lines[0]}`);
         }
-
+    } finally {
+        context.stop();
     }
 
-    context.stop();
 }

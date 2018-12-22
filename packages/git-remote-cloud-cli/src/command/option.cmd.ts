@@ -3,13 +3,13 @@ import { HelperCommand } from '../command-context';
 // Options Command
 export default {
     test: line => line.startsWith('option'),
-    run: (ctx, lines) => {
+    run: (ctx, line) => {
         const matchOption = /option (\S+) (\S+)/;
-        const [match = '', name = '', value = ''] = lines[0].match(matchOption) || [];
+        const [match = '', name = '', value = ''] = line.match(matchOption) || [];
         if (name === 'verbosity') {
             ctx.options[name] = Number(value);
-            return ['ok'];
+            return ctx.write('ok');
         }
-        return ['unsupported'];
+        ctx.write('unsupported');
     },
 } as HelperCommand
