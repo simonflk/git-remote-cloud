@@ -16,5 +16,5 @@ export default function loadDriver(
         throw new Error(`Unable to load cloud storage provider driver ${type} - ${e.message}`);
     }
 
-    return new Driver({ token, pathname });
+    return new Driver({ token, root: pathname });
 }

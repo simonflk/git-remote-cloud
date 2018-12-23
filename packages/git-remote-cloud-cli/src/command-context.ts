@@ -63,6 +63,9 @@ export default class CommandContext implements types.CommandContext {
     }
 
     write(...lines: string[]) : void {
+        if (lines.length === 0) {
+            this.output.write('');
+        }
         lines.forEach(out => {
             this.output.write(`${out}\n`);
         });

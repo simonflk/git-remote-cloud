@@ -3,9 +3,14 @@ import { HelperCommand } from '../types';
 // list Command
 export default {
     test: line => line.startsWith('list'),
-    run: (ctx, line) => {
+    run: async (ctx, line) => {
         const forPush = line.includes('for-push');
-        ctx.write(`todo: ${line}`)
+        const files = await ctx.driver.list('refs', forPush);
+        for await (const file of files) {
+            ctx.write(`${file.sha} ${file.name}`);
+        }
+        ctx.write();
+
     },
 } as HelperCommand;
 
