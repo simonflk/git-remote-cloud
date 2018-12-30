@@ -1,6 +1,7 @@
 import readline from 'readline';
 import { ReadlineAsyncIterator } from 'async-iterators-kit';
 
+import GitRepository from './repo';
 import * as types from './types';
 
 export default class CommandContext implements types.CommandContext {
@@ -19,6 +20,11 @@ export default class CommandContext implements types.CommandContext {
             verbosity: options.verbosity
         };
         this.done = false;
+        this.cache = {
+            refs: new Map(),
+            pushed: new Map(),
+        }
+        this.repo = new GitRepository();
     }
 
     private options: { verbosity: 0 | 1 | 2 };
@@ -28,6 +34,8 @@ export default class CommandContext implements types.CommandContext {
     private rl: readline.Interface;
 
     public driver: types.CloudDriver;
+    public cache: types.ObjectCache;
+    public repo: types.GitRepository;
 
     logger = (level: number, message: string = '') => {
         if (level <= this.options.verbosity) {

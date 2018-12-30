@@ -6,14 +6,13 @@ import _ from 'highland';
 import { CloudDriver, CloudDriverOptions, GitRef } from 'git-remote-cloud-driver-base';
 
 const readFileAsync = promisify(require('fs').readFile);
+const unlinkAsync = promisify(require('fs').unlink);
 
 export default class FileSystemDriver implements CloudDriver {
     constructor(options: CloudDriverOptions) {
-        this.token = options.token;
         this.root = options.root;
     }
 
-    private token: string;
     private root: string;
 
     async list(path: string, forPush: boolean) {
@@ -35,7 +34,7 @@ export default class FileSystemDriver implements CloudDriver {
 
         const refStream: Highland.Stream<GitRef> = fileStream.map(
             async (filePath: string) => ({
-                sha: (await readFileAsync(filePath, {encoding: 'utf-8'})).trim(),
+                sha: (await readFileAsync(filePath, {encoding: 'utf8'})).trim(),
                 name: filePath
             })
         ).flatten();
@@ -67,9 +66,16 @@ export default class FileSystemDriver implements CloudDriver {
         return iteratable;
     }
 
-    async fetch(path: string) { return new Blob() }
+    async fetch(path: string) {
+        const filePath = resolvePath(this.root, path);
+        return await readFileAsync(filePath, {encoding: 'utf8'});
+    }
 
-    async put(path: string) { }
+    async write(path: string, data: Buffer) { }
 
-    async delete(path: string) { }
+    async update(path: string, data: Buffer, version?: string) { }
+
+    async delete(path: string) {
+        return await unlinkAsync(resolvePath(this.root, path));
+    }
 }

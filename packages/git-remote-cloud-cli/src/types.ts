@@ -1,4 +1,4 @@
-import { CloudDriver } from 'git-remote-cloud-driver-base';
+import { CloudDriver, GitRef } from 'git-remote-cloud-driver-base';
 export * from 'git-remote-cloud-driver-base';
 
 export interface HelperOptions {
@@ -15,6 +15,8 @@ export interface HelperCommand {
 
 export interface CommandContext {
     driver: CloudDriver
+    cache: ObjectCache
+    repo: GitRepository
     logger(level: number, message: string) : void
     hasOption(opt: string) : boolean
     setOption(opt: string, val: any) : void
@@ -23,4 +25,19 @@ export interface CommandContext {
     write(...lines: string[]) : void
     isConnected(): boolean
     stop(): void
+}
+
+export interface ObjectCache {
+    refs: Map<string,GitRef>,
+    pushed: Map<string,string>,
+}
+
+export interface GitRepository {
+    listObjects(sha: string, excludeRefs: string[]) : Promise<string[]>
+    getObjectPath(sha: string): string
+    getRefPath(ref: string): string
+    getRefValue(ref: string): Promise<string>
+    encodeObject(sha: string) : Promise<Buffer>
+    objectExists(sha: string) : Promise<boolean>
+    isAncestor(sha: string, otherSha: string) : Promise<boolean>
 }
