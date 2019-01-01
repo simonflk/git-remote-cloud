@@ -36,9 +36,9 @@
     "async-iterators-kit": "1.0.1",
     "dot-prop": "4.2.0",
     "env-paths": "2.0.0",
+    "execa": "^1.0.0",
     "json5": "2.1.0",
-    "p-map": "^2.0.0",
-    "simple-git": "^1.107.0"
+    "p-map": "^2.0.0"
   },
   "optionalDependencies": {
     "git-remote-cloud-driver-dropbox": "0.0.0",
@@ -48,6 +48,7 @@
   "devDependencies": {
     "@types/dot-prop": "4.2.0",
     "@types/env-paths": "1.0.2",
+    "@types/execa": "^0.9.0",
     "@types/json5": "0.0.30",
     "@types/p-map": "^1.1.0",
     "git-remote-cloud-driver-base": "0.0.0"

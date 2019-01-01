@@ -16,7 +16,6 @@ export interface HelperCommand {
 export interface CommandContext {
     driver: CloudDriver
     cache: ObjectCache
-    repo: GitRepository
     logger(level: number, message: string) : void
     hasOption(opt: string) : boolean
     setOption(opt: string, val: any) : void
@@ -30,14 +29,4 @@ export interface CommandContext {
 export interface ObjectCache {
     refs: Map<string,GitRef>,
     pushed: Map<string,string>,
-}
-
-export interface GitRepository {
-    listObjects(sha: string, excludeRefs: string[]) : Promise<string[]>
-    getObjectPath(sha: string): string
-    getRefPath(ref: string): string
-    getRefValue(ref: string): Promise<string>
-    encodeObject(sha: string) : Promise<Buffer>
-    objectExists(sha: string) : Promise<boolean>
-    isAncestor(sha: string, otherSha: string) : Promise<boolean>
 }

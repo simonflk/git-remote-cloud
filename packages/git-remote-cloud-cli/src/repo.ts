@@ -2,90 +2,94 @@ import zlib from 'zlib';
 import pMap from 'p-map';
 import path from 'path';
 import { promisify } from 'util';
-import SimpleGit from 'simple-git/promise';
+import execa from 'execa';
 
 import * as types from './types';
 
 const inflate = promisify(zlib.inflate);
 const deflate = promisify(zlib.deflate);
 
-export default class Repository implements types.GitRepository {
+export async function execGit (args: string[] = [], options = {}) : Promise<execa.ExecaReturns>{
+    return await execa('git', args, options);
+}
 
-    private git: SimpleGit.SimpleGit;
+export async function listObjects(ref: string, excludeRefs: string[]) {
+    const { stdout } = await execGit([
+        'rev-list',
+        '--objects',
+        ref,
+        '--exlude',
+        ...await buildExcludeList(excludeRefs),
+    ]);
+    return stdout.split(/\n/).map(line => line.split(/\s+/)[0]);
+}
 
-    constructor() {
-        this.git = SimpleGit();
+export async function encodeObject(ref: string): Promise<Buffer> {
+    const [kind, size] = await Promise.all([
+        getObjectKind(ref),
+        getObjectSize(ref),
+    ]);
+    const contents = await getObjectContents(ref, kind);
+    const data = Buffer.from(`${kind} ${size}\0${contents}`, 'utf8');
+    return await deflate(data) as Buffer;
+}
+
+export function getObjectPath(sha: string): string {
+    return path.join('objects', sha.substr(0, 2), sha.substr(2));
+}
+
+export function getRefPath(ref: string): string {
+    return path.join('refs', ref);
+}
+
+export async function getRefValue(ref: string): Promise<string> {
+    const { stdout } = await execGit(['rev-parse', ref]);
+    return stdout;
+}
+
+export async function objectExists(sha: string): Promise<boolean> {
+    try {
+        await execGit(['cat-file', '-e', sha]);
+        return true;
+    } catch(e) {
+        return false;
     }
+}
 
-    async listObjects(ref: string, excludeRefs: string[]) {
-        const objects = await this.git.raw([
-            'rev-list',
-            '--objects',
-            ref,
-            '--exlude',
-            ...await this.buildExcludeList(excludeRefs),
-        ]);
-        return objects.split(/\n/).map(line => line.split(/\s+/)[0]);
+export async function isAncestor(ancestor: string, ref: string): Promise<boolean> {
+    try {
+        await execGit(['merge-base', '--is-ancestor', ancestor, ref]);
+        return true;
+    } catch(e) {
+        return false;
     }
+}
 
-    async encodeObject(ref: string): Promise<Buffer> {
-        const [kind, size] = await Promise.all([
-            this.getObjectKind(ref),
-            this.git.catFile(['-s', ref])
-        ]);
-        const contents = await this.getObjectContents(ref, kind);
-        const data = Buffer.from(`${kind} ${size}\0${contents}`, 'utf8');
-        return await deflate(data) as Buffer;
-    }
+export async function getObjectKind(ref: string): Promise<string> {
+    const {stdout: kind} = await execGit(['cat-file', '-t', ref]);
+    return kind
+}
 
-    getObjectPath(sha: string): string {
-        return path.join('objects', sha.substr(0, 2), sha.substr(2));
-    }
+export async function getObjectSize(ref: string): Promise<string> {
+    const {stdout: kind} = await execGit(['cat-file', '-s', ref]);
+    return kind
+}
 
-    getRefPath(ref: string): string {
-        return path.join('refs', ref);
-    }
+export async function getObjectContents(ref: string, kind?: string): Promise<string> {
+    const { stdout: contents } = await execGit([
+        'cat-file',
+        kind || '-p',
+        ref
+    ]);
+    return contents;
+}
 
-    async getRefValue(ref: string): Promise<string> {
-        return await this.git.revparse([ref]);
-    }
-
-    private async getObjectKind(ref: string): Promise<string> {
-        return await this.git.catFile(['-t', ref]);
-    }
-
-    private async getObjectContents(ref: string, kind?: string): Promise<string> {
-        return await this.git.catFile([
-            kind || '-p',
-            ref
-        ]);
-    }
-
-    async objectExists(sha: string): Promise<boolean> {
-        try {
-            await this.git.catFile(['-e', sha]);
-            return true;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    async isAncestor(ancestor: string, ref: string): Promise<boolean> {
-        try {
-            await this.git.raw(['merge-base', '--is-ancestor', ancestor, ref]);
-            return true;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    private async buildExcludeList(excludeRefs: string[] = []): Promise<string[]> {
-        const mapper = async (ref: string) => ({ ref, exists: await this.objectExists(ref) });
-        const mapped = await pMap(excludeRefs, mapper, { concurrency: 5 });
-        const exists = mapped.reduce(
-            (state: string[], { exists, ref }) => exists ? [...state, `^${ref}`] : state,
-            []
-        );
-        return exists;
-    }
+async function buildExcludeList(excludeRefs: string[] = []): Promise<string[]> {
+    const mapper = async (ref: string) => ({ ref, exists: await objectExists(ref) });
+    const mapped = await pMap(excludeRefs, mapper, { concurrency: 5 });
+    const exists = mapped.reduce(
+        (state: string[], { exists, ref }) => exists ? [...state, `^${ref}`] : state,
+        []
+    );
+    return exists;
 }

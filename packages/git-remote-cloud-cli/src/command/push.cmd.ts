@@ -1,6 +1,6 @@
 import pMap from 'p-map';
 import * as types from '../types';
-import { createContext } from 'vm';
+import * as repo from '../repo';
 
 const commandFormat = /^push (?<force>\+?)(?<source>[^:]*):(?<destination>.*)/;
 interface commandParams {
@@ -48,29 +48,29 @@ async function getObjectsToPush(ctx: types.CommandContext, source: string): Prom
     for (const gitRef of ctx.cache.refs.values()) {
         present.add(gitRef.sha);
     }
-    return await ctx.repo.listObjects(source, [...present]);
+    return await repo.listObjects(source, [...present]);
 }
 
 function pushObject(ctx: types.CommandContext) {
     return async (sha: string) => {
-        const data = await ctx.repo.encodeObject(sha);
-        const path = ctx.repo.getObjectPath(sha);
+        const data = await repo.encodeObject(sha);
+        const path = repo.getObjectPath(sha);
         await ctx.driver.write(path, data);
     };
 }
 
 async function writeRef(ctx: types.CommandContext, source: string, destination: string, force: boolean) {
-    const newSha = await ctx.repo.getRefValue(source);
-    const path = ctx.repo.getRefPath(destination);
+    const newSha = await repo.getRefValue(source);
+    const path = repo.getRefPath(destination);
     const gitRef = ctx.cache.refs.get(destination);
     const refContents = Buffer.from(`${newSha}\n`, 'utf8');
 
     if (gitRef) {
-        const exists = await ctx.repo.objectExists(gitRef.sha);
+        const exists = await repo.objectExists(gitRef.sha);
         if (!exists) {
             throw new Error('fetch first');
         }
-        const isFastForward = await ctx.repo.isAncestor(gitRef.sha, newSha)
+        const isFastForward = await repo.isAncestor(gitRef.sha, newSha)
         if (!isFastForward && !force) {
             throw new Error('non-fast forward');
         }
