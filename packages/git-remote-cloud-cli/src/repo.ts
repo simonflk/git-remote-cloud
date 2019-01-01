@@ -34,6 +34,17 @@ export async function encodeObject(ref: string): Promise<Buffer> {
     return await deflate(data) as Buffer;
 }
 
+export async function decodeObject(data: Buffer) {
+    const decompressed = await inflate(data) as Buffer;
+    const [header, contents] = decompressed.toString().split(/\0/);
+    const kind = header.split(/\s/)[0];
+    const sha = await execGit(
+        ['hash-object', '-w', '--stdin', '-t', kind],
+        { input: contents }
+    );
+    return sha;
+}
+
 export function getObjectPath(sha: string): string {
     return path.join('objects', sha.substr(0, 2), sha.substr(2));
 }
@@ -71,8 +82,8 @@ export async function getObjectKind(ref: string): Promise<string> {
 }
 
 export async function getObjectSize(ref: string): Promise<string> {
-    const {stdout: kind} = await execGit(['cat-file', '-s', ref]);
-    return kind
+    const {stdout: size} = await execGit(['cat-file', '-s', ref]);
+    return size
 }
 
 export async function getObjectContents(ref: string, kind?: string): Promise<string> {
@@ -82,6 +93,26 @@ export async function getObjectContents(ref: string, kind?: string): Promise<str
         ref
     ]);
     return contents;
+}
+
+export async function getReferencedObjects(sha: string) : Promise<string[]>{
+    const kind = await getObjectKind(sha);
+    if (kind === 'blob') {
+        return [];
+    }
+    const contents = await getObjectContents(sha);
+    const lines = contents.split(/\n/).map(l => l.trim());
+    const getWord = (index: number = 1) => (line: string) => line.split(/\s+/)[index];
+    if (kind === 'tag') {
+        return [getWord()(lines[0])];
+    } else if (kind === 'commit') {
+        // filter out sub-modules
+        return lines.filter(l => /^(?:tree|parent)\s/.test(l)).map(getWord());
+    } else if (kind === 'tree') {
+        // mode, kind, sha, name
+        return lines.filter(l => !/^16000 commit/.test(l)).map(getWord(2));
+    }
+    throw new Error(`Unexpected object type ${kind}`);
 }
 
 async function buildExcludeList(excludeRefs: string[] = []): Promise<string[]> {
